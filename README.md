@@ -29,7 +29,7 @@ Local development: `bun install --frozen-lockfile`, `bun run build`; configure `
 | `/caveman ultra` | Maximum prose compression; abbreviations/arrows |
 | `/caveman off` | Stop injecting reply-style rules |
 
-Arguments trimmed, case-insensitive; invalid arguments fail without changing state. Command persists setting before acknowledgement; no model roundtrip. Confirmation stored as synthetic inbox item with `resume: false`, delivered into transcript on next turn—not immediate assistant reply. Inbox rendering client-dependent.
+Arguments trimmed, case-insensitive; invalid arguments fail without changing state. `/caveman` prints `Caveman level: x`; switches persist first, then print `Caveman level set to x`. Commands admit synthetic chat messages with `resume: true`, waking model execution to deliver them without waiting for another user turn. Model may add reply; normal provider/token usage applies. Not client-side toast or model-free output.
 
 `caveman_set_level` remains model-callable, including while off. Plain-text requests such as `stop caveman` depend on model tool use; **no deterministic plain-text interception**. Guaranteed switching path: slash command. No aliases, skills, TUI picker, or plugin options.
 

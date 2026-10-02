@@ -27,6 +27,7 @@ test("all levels survive replay and reload; another location reads live settings
   expect(first.writes).toBe(0)
   for (const level of ["lite", "full", "ultra", "off"]) {
     await first.command(`  ${level.toUpperCase()}  `)
+    expect(first.confirmations.at(-1)).toEqual({ sessionID: "session-a", text: `Caveman level set to ${level}`, resume: true })
     const other = await second.request("context")
     if (level === "off") expect(other.system).toHaveLength(1)
     else expect(other.system[0]).toMatchObject({ text: expect.stringContaining(level.toUpperCase()) })
@@ -99,6 +100,8 @@ test("confirmation failure reports saved mode instead of pretending switch faile
   const host = harness()
   await plugin.setup(host.context)
   host.failConfirmation(new Error("Inbox unavailable"))
+  await expect(host.command("")).rejects.toThrow("Inbox unavailable")
+  expect(host.writes).toBe(0)
   await expect(host.command("off")).rejects.toThrow("Caveman mode saved as off; confirmation unavailable.")
   expect((await host.request("context")).system).toHaveLength(1)
 })
@@ -138,7 +141,7 @@ test("model tool changes shared mode through V2 structured result, including whi
   await plugin.setup(host.context)
   await host.command("off")
   const result = await host.tool({ level: "lite" })
-  expect(result).toEqual({ content: "Caveman: lite. Applied across server database." })
+  expect(result).toEqual({ content: "Caveman level set to lite" })
   expect((await host.request("context")).system[0]).toMatchObject({ text: expect.stringContaining("LITE") })
   expect(host.tools.get("caveman_set_level")?.input).toMatchObject({
     type: "object", required: ["level"], additionalProperties: false,
@@ -146,16 +149,19 @@ test("model tool changes shared mode through V2 structured result, including whi
   })
 })
 
-test("command switches off durably; bare command reports status without model work", async () => {
+test("command switches off durably; bare command reports status and requests model wake", async () => {
   const host = harness()
   await plugin.setup(host.context)
+  await host.command("")
+  expect(host.writes).toBe(0)
+  expect(host.confirmations.at(-1)).toEqual({ sessionID: "session-a", text: "Caveman level: full", resume: true })
   await host.command("off")
   expect(host.values.get("settings")).toEqual({ version: 1, level: "off" })
-  expect(host.confirmations.at(-1)).toEqual({ sessionID: "session-a", text: "Caveman: off. Plugin rules disabled.", resume: false })
+  expect(host.confirmations.at(-1)).toEqual({ sessionID: "session-a", text: "Caveman level set to off", resume: true })
   expect((await host.request("context")).system).toEqual([
     { type: "text", text: "Original system instructions" },
   ])
   await host.command("")
   expect(host.writes).toBe(1)
-  expect(host.confirmations.at(-1)?.text).toBe("Caveman: off.")
+  expect(host.confirmations.at(-1)).toEqual({ sessionID: "session-a", text: "Caveman level: off", resume: true })
 })

@@ -48,6 +48,10 @@ try {
   await fixture.host.sessions.generate({ sessionID: session.id, prompt: "Installed package reply" })
   assert.match(JSON.stringify(fixture.requests[0].messages), /Caveman mode active: FULL/)
   await fixture.host.sessions.command({ sessionID: session.id, name: "caveman", text: "off" })
+  await fixture.host.sessions.wait({ sessionID: session.id })
+  const messages = await fixture.host.sessions.context({ sessionID: session.id })
+  assert.equal(messages.filter((message) => message.type === "synthetic").at(-1)?.text, "Caveman level set to off")
+  assert.ok(fixture.requests.some((request) => request.kind === "primary"))
   await fixture.host.sessions.generate({ sessionID: session.id, prompt: "Installed package off" })
   assert.doesNotMatch(JSON.stringify(fixture.requests.at(-1).messages), /Caveman mode active/)
 } finally { await fixture.close() }

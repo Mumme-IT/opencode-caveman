@@ -10,14 +10,14 @@ export function cavemanCommand(mode: Mode, session: Pick<Plugin.Context["session
       const argument = prompt.text.trim().toLowerCase()
       let text: string
       if (!argument) {
-        text = `Caveman: ${await mode.get()}.`
+        text = `Caveman level: ${await mode.get()}`
       } else {
         if (!isValidLevel(argument)) throw new Error("Usage: /caveman [lite|full|ultra|off]")
         await mode.set(argument)
         text = confirmation(argument)
       }
       try {
-        await session.synthetic({ sessionID, text, resume: false })
+        await session.synthetic({ sessionID, text, resume: true })
       } catch (cause) {
         if (!argument) throw cause
         throw new Error(`Caveman mode saved as ${argument}; confirmation unavailable.`, { cause })

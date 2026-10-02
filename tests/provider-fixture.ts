@@ -65,27 +65,33 @@ export async function providerFixture(plugins: readonly Plugin.Plugin[]) {
       })
     },
   })
+  const options: OpenCode.CreateOptions = {
+    database: { path: join(root, "state.sqlite") },
+    config: {
+      directory: join(root, "config"), project: false,
+      content: JSON.stringify({ model: "fixture/fixture", permissions: [{ action: "*", resource: "*", effect: "allow" }] }),
+    },
+    models: { fetch: false, snapshot: false },
+    fs: { filewatcher: false, fff: false },
+    log: { level: "error", emit: () => {} },
+    plugins: [fixture, ...plugins],
+  }
   let host: OpenCode.Interface
   try {
-    host = await OpenCode.create({
-      database: { path: join(root, "state.sqlite") },
-      config: {
-        directory: join(root, "config"), project: false,
-        content: JSON.stringify({ model: "fixture/fixture", permissions: [{ action: "*", resource: "*", effect: "allow" }] }),
-      },
-      models: { fetch: false, snapshot: false },
-      fs: { filewatcher: false, fff: false },
-      log: { level: "error", emit: () => {} },
-      plugins: [fixture, ...plugins],
-    })
+    host = await OpenCode.create(options)
   } catch (error) {
     server.stop(true)
     await rm(root, { recursive: true, force: true })
     throw error
   }
   return {
-    host, root, requests,
+    get host() { return host },
+    root, requests,
     useTool() { nextTool = true },
+    async restart() {
+      await host.close()
+      host = await OpenCode.create(options)
+    },
     async close() {
       await host.close()
       server.stop(true)

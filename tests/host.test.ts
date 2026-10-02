@@ -1,57 +1,49 @@
 import { expect, test } from "bun:test"
-import { mkdir, rm } from "node:fs/promises"
+import { mkdir } from "node:fs/promises"
 import { join } from "node:path"
-import { OpenCode } from "@opencode/sdk"
 import plugin from "../index.ts"
-import { temporaryDirectory } from "./temporary.ts"
+import { providerFixture } from "./provider-fixture.ts"
 
 test("installed V2 host executes command arguments and shares mode across projects and restart", async () => {
-  const root = await temporaryDirectory("caveman-host-")
-  const a = join(root, "project-a")
-  const b = join(root, "project-b")
-  await Promise.all([mkdir(a), mkdir(b)])
-  const options: OpenCode.CreateOptions = {
-    database: { path: join(root, "state.sqlite") },
-    config: { directory: join(root, "config"), project: false, content: "{}" },
-    models: { fetch: false, snapshot: false },
-    fs: { filewatcher: false, fff: false },
-    log: { level: "error", emit: () => {} },
-    plugins: [plugin],
-  }
-  let host: OpenCode.Interface | undefined
+  const fixture = await providerFixture([plugin])
+  const a = join(fixture.root, "project-a")
+  const b = join(fixture.root, "project-b")
   try {
-    host = await OpenCode.create(options)
-    const sessionA = await host.sessions.create({ location: { directory: a } })
-    const sessionB = await host.sessions.create({ location: { directory: b } })
-    await host.sessions.command({ sessionID: sessionA.id, name: "caveman", text: "off" })
-    await host.sessions.command({ sessionID: sessionB.id, name: "caveman", text: "" })
-    const active = await host.plugin.list({ location: { directory: a } })
+    await Promise.all([mkdir(a), mkdir(b)])
+    const sessionA = await fixture.host.sessions.create({ location: { directory: a } })
+    const sessionB = await fixture.host.sessions.create({ location: { directory: b } })
+    await fixture.host.sessions.command({ sessionID: sessionA.id, name: "caveman", text: "off" })
+    await fixture.host.sessions.wait({ sessionID: sessionA.id })
+    await fixture.host.sessions.command({ sessionID: sessionB.id, name: "caveman", text: "" })
+    await fixture.host.sessions.wait({ sessionID: sessionB.id })
+    const active = await fixture.host.plugin.list({ location: { directory: a } })
     expect(JSON.stringify(active)).toContain("mumme-it.caveman")
-    const inbox = await host.sessions.inbox.list({ sessionID: sessionB.id })
-    expect(JSON.stringify(inbox)).toContain("Caveman: off.")
-    expect(await host.sessions.context({ sessionID: sessionB.id })).toEqual([])
-    await host.close()
-    host = await OpenCode.create(options)
-    await host.sessions.command({ sessionID: sessionA.id, name: "caveman", text: "" })
-    expect(JSON.stringify(await host.sessions.inbox.list({ sessionID: sessionA.id }))).toContain("Caveman: off.")
+    expect(JSON.stringify(await fixture.host.sessions.context({ sessionID: sessionB.id }))).toContain("Caveman level: off")
+    await fixture.restart()
+    await fixture.host.sessions.command({ sessionID: sessionA.id, name: "caveman", text: "" })
+    await fixture.host.sessions.wait({ sessionID: sessionA.id })
+    expect(JSON.stringify(await fixture.host.sessions.context({ sessionID: sessionA.id }))).toContain("Caveman level: off")
     await Promise.all([
-      host.sessions.command({ sessionID: sessionA.id, name: "caveman", text: "lite" }),
-      host.sessions.command({ sessionID: sessionB.id, name: "caveman", text: "ultra" }),
+      fixture.host.sessions.command({ sessionID: sessionA.id, name: "caveman", text: "lite" }),
+      fixture.host.sessions.command({ sessionID: sessionB.id, name: "caveman", text: "ultra" }),
+    ])
+    await Promise.all([
+      fixture.host.sessions.wait({ sessionID: sessionA.id }),
+      fixture.host.sessions.wait({ sessionID: sessionB.id }),
     ])
     for (const session of [sessionA, sessionB]) {
-      await host.sessions.command({ sessionID: session.id, name: "caveman", text: "" })
+      await fixture.host.sessions.command({ sessionID: session.id, name: "caveman", text: "" })
+      await fixture.host.sessions.wait({ sessionID: session.id })
     }
     const lastStatus = async (sessionID: string) => {
-      const inbox = await host!.sessions.inbox.list({ sessionID })
-      const last = inbox.at(-1)
-      return last?.type === "synthetic" ? last.payload.text : undefined
+      const messages = await fixture.host.sessions.context({ sessionID })
+      return messages.filter((message) => message.type === "synthetic").at(-1)?.text
     }
     const statusA = await lastStatus(sessionA.id)
     if (statusA === undefined) throw new Error("Missing status acknowledgement")
-    expect(["Caveman: lite.", "Caveman: ultra."]).toContain(statusA)
+    expect(["Caveman level: lite", "Caveman level: ultra"]).toContain(statusA)
     expect(await lastStatus(sessionB.id)).toBe(statusA)
   } finally {
-    await host?.close()
-    await rm(root, { recursive: true, force: true })
+    await fixture.close()
   }
-}, 30_000)
+}, 60_000)

@@ -25,7 +25,5 @@ export function createMode(storage: Pick<StorageDomain, "get" | "set">) {
 export type Mode = ReturnType<typeof createMode>
 
 export function confirmation(level: CavemanLevel): string {
-  return level === "off"
-    ? "Caveman: off. Plugin rules disabled."
-    : `Caveman: ${level}. Applied across server database.`
+  return `Caveman level set to ${level}`
 }
