@@ -69,4 +69,6 @@ Tests: public command/tool/hook boundary, failures/corrupt-state repair, transfo
 
 Native opaque provider checkpoints and real-provider style fidelity not validated by local fixture. Per-request enforcement independent of summary text; no claim of universal provider compatibility.
 
+Release authentication: npm trusted publishing (OIDC), GitHub repository `Mumme-IT/opencode-caveman`, workflow `publish.yml`, no environment. Requires matching npm package trust with direct `npm publish` permission; no `NPM_TOKEN` secret. Release tag push triggers validation and publishing.
+
 Design contract: [V2 implementation spec](docs/specs/opencode-v2-migration.md). Earlier research: [migration investigation](docs/research/opencode-v2-migration.md); historical proposal, superseded by confirmed spec.

@@ -32,6 +32,7 @@ test("packed V2-only package installs in clean consumer and runs on real V2 host
     const installed = join(consumer, "node_modules/@mumme-it/opencode-caveman")
     const manifest = JSON.parse(await readFile(join(installed, "package.json"), "utf8"))
     expect(manifest.dependencies).toEqual({ "@opencode/plugin": "2.0.21" })
+    expect(manifest.repository).toEqual({ type: "git", url: "git+https://github.com/Mumme-IT/opencode-caveman.git" })
     expect(await readFile(join(installed, "dist/index.js"), "utf8")).not.toContain("@opencode-ai/")
     const script = join(consumer, "verify.ts")
     await writeFile(script, `
