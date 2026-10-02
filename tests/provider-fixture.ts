@@ -1,7 +1,8 @@
-import { mkdtemp, rm } from "node:fs/promises"
+import { rm } from "node:fs/promises"
 import { join } from "node:path"
 import { Model, Plugin, Provider } from "@opencode/plugin"
 import { OpenCode } from "@opencode/sdk"
+import { temporaryDirectory } from "./temporary.ts"
 
 export type ChatRequest = {
   kind?: string
@@ -11,7 +12,7 @@ export type ChatRequest = {
 }
 
 export async function providerFixture(plugins: readonly Plugin.Plugin[]) {
-  const root = await mkdtemp("/tmp/opencode/caveman-provider-")
+  const root = await temporaryDirectory("caveman-provider-")
   const requests: ChatRequest[] = []
   let nextTool = false
   const server = Bun.serve({

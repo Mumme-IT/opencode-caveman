@@ -1,11 +1,12 @@
 import { expect, test } from "bun:test"
-import { mkdtemp, mkdir, rm } from "node:fs/promises"
+import { mkdir, rm } from "node:fs/promises"
 import { join } from "node:path"
 import { OpenCode } from "@opencode/sdk"
 import plugin from "../index.ts"
+import { temporaryDirectory } from "./temporary.ts"
 
 test("installed V2 host executes command arguments and shares mode across projects and restart", async () => {
-  const root = await mkdtemp("/tmp/opencode/caveman-host-")
+  const root = await temporaryDirectory("caveman-host-")
   const a = join(root, "project-a")
   const b = join(root, "project-b")
   await Promise.all([mkdir(a), mkdir(b)])

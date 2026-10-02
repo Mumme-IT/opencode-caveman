@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test"
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { temporaryDirectory } from "../tests/temporary.ts"
 
 const repository = dirname(dirname(fileURLToPath(import.meta.url)))
 
@@ -15,7 +16,7 @@ async function run(command: string[], cwd: string) {
 }
 
 test("packed V2-only package installs in clean consumer and runs on real V2 host", async () => {
-  const root = await mkdtemp("/tmp/opencode/caveman-package-")
+  const root = await temporaryDirectory("caveman-package-")
   try {
     const result = JSON.parse(await run(["npm", "pack", "--ignore-scripts", "--json", "--pack-destination", root], repository))
     const pack = result[0] as { filename: string; files: { path: string }[] }
