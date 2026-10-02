@@ -9,6 +9,6 @@
     "noEmit": true,
     "types": ["bun-types"]
   },
-  "include": ["index.ts", "tools/**/*.ts"],
+  "include": ["index.ts", "tools/**/*.ts", "tests/**/*.ts", "packaging/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

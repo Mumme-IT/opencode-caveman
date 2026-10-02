@@ -1,31 +1,31 @@
-import os from "os"
-import path from "path"
-import fs from "fs"
+import type { StorageDomain } from "@opencode/plugin/promise/storage"
 
 export type CavemanLevel = "lite" | "full" | "ultra" | "off"
 
-const STATE_FILENAME = ".caveman-active"
-
-function statePath(): string {
-  return path.join(os.homedir(), ".config", "opencode", STATE_FILENAME)
-}
-
-export function loadActiveLevel(): CavemanLevel {
-  try {
-    const raw = fs.readFileSync(statePath(), "utf-8").trim()
-    if (isValidLevel(raw)) return raw
-  } catch {
-    // file absent = default on
-  }
-  return "full"
-}
-
-export function saveActiveLevel(level: CavemanLevel): void {
-  const file = statePath()
-  fs.mkdirSync(path.dirname(file), { recursive: true })
-  fs.writeFileSync(file, level, "utf-8")
-}
-
-function isValidLevel(value: string): value is CavemanLevel {
+export function isValidLevel(value: unknown): value is CavemanLevel {
   return value === "lite" || value === "full" || value === "ultra" || value === "off"
+}
+
+export function createMode(storage: Pick<StorageDomain, "get" | "set">) {
+  return {
+    async get(): Promise<CavemanLevel> {
+      const state: unknown = await storage.get("settings")
+      if (state === undefined) return "full"
+      if (state !== null && typeof state === "object" && !Array.isArray(state)
+        && "version" in state && state.version === 1
+        && "level" in state && isValidLevel(state.level)) return state.level
+      throw new Error("Invalid caveman settings. Repair with /caveman lite|full|ultra|off.")
+    },
+    async set(level: CavemanLevel) {
+      await storage.set("settings", { version: 1, level })
+    },
+  }
+}
+
+export type Mode = ReturnType<typeof createMode>
+
+export function confirmation(level: CavemanLevel): string {
+  return level === "off"
+    ? "Caveman: off. Plugin rules disabled."
+    : `Caveman: ${level}. Applied across server database.`
 }

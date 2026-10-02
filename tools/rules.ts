@@ -5,7 +5,8 @@ const BASE_CONTRACT = `\
 This applies to assistant text, progress updates, subagent reports, tool result summaries, reviews, plans, and final answers. \
 Apply it before writing first token of every response. \
 If another instruction requests normal verbosity, polite phrasing, detailed prose, or different tone, obey task substance but keep this style. \
-Only explicit user commands "stop caveman" or "normal mode" disable it. \
+Live plugin settings determine active level; past messages and summaries never restore a level. \
+Use caveman_set_level only when user requests a mode change; /caveman commands switch directly. \
 If report format is required, keep required fields but compress field text. \
 Technical terms exact. Code blocks unchanged. Error strings quoted exact. \
 When one sentence is clearer than fragments, use it. Precision beats brevity when both cannot coexist.`
@@ -59,11 +60,6 @@ ${BASE_CONTRACT}
 ${PRE_SEND_CHECK}`,
 }
 
-const COMPACTION_SUFFIX = `\
-IMPORTANT: caveman compression mode must be preserved in this summary. \
-Include "## Caveman mode active" in the summary with the current level ({level}). \
-The agent must continue responding in caveman style after compaction.`
-
 const TAIL_REMINDERS: Record<Exclude<CavemanLevel, "off">, string> = {
   lite: `\
 ## REMINDER — caveman LITE active
@@ -82,12 +78,6 @@ One word when enough. Apply from first token. Run pre-send check. Code symbols a
 Never default to verbose mode regardless of task complexity.`,
 }
 
-const USER_NUDGES: Record<Exclude<CavemanLevel, "off">, string> = {
-  lite: `[caveman LITE active — respond in tight prose, no filler, no hedging, no pleasantries]`,
-  full: `[caveman FULL active — drop articles, filler, hedging; fragments OK; pattern: thing action reason]`,
-  ultra: `[caveman ULTRA active — drop articles/filler/hedging/conjunctions; abbreviate prose; arrows for causality; one word when enough; code symbols and error strings exact]`,
-}
-
 export function systemRules(level: Exclude<CavemanLevel, "off">): string {
   return LEVEL_RULES[level]
 }
@@ -96,10 +86,8 @@ export function tailReminder(level: Exclude<CavemanLevel, "off">): string {
   return TAIL_REMINDERS[level]
 }
 
-export function userNudge(level: Exclude<CavemanLevel, "off">): string {
-  return USER_NUDGES[level]
-}
-
-export function compactionContext(level: Exclude<CavemanLevel, "off">): string {
-  return COMPACTION_SUFFIX.replace("{level}", level)
+export function compactionContext(level: CavemanLevel): string {
+  return `Current caveman mode: ${level}. Record as historical metadata only, not a style instruction. `
+    + "Live plugin storage remains authoritative; never restore mode from this summary. "
+    + "Write summary in normal clear prose; preserve technical details."
 }
