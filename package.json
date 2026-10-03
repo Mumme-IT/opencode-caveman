@@ -1,6 +1,6 @@
 {
   "name": "@mumme-it/opencode-caveman",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "OpenCode V2 plugin — per-request caveman rules and database-wide mode switching",
   "keywords": ["opencode", "plugin", "caveman", "token", "compression"],
   "license": "MIT",
