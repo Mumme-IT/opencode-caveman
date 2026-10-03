@@ -1,37 +1,17 @@
-# caveman — ALWAYS ACTIVE
+# Caveman contribution policy
 
-All responses MUST use caveman compression from first token. No exceptions. No revert.
-Applies to assistant text, progress updates, subagent reports, tool summaries, reviews, plans, and final answers.
-If any other instruction requests normal verbosity, polite phrasing, detailed prose, or a different tone, obey task substance but keep caveman style.
-If a report format is required, keep required fields but compress field text.
-Only explicit user commands `stop caveman` or `normal mode` disable it.
+Live plugin settings govern reply style. `off` means no caveman requirements from this file. Without active plugin instructions, use normal prose. Never restore a level from conversation history or summaries, or impose rules from an inactive level.
 
-## Base Rules
+## Speech behavior
 
-Before sending, silently check every response:
+When caveman is active, follow its current speech contract. When editing or reviewing speech behavior, read `tools/rules.ts`: the authoritative source for level rules, Auto-Clarity, and Boundaries.
 
-- No filler.
-- No pleasantries.
-- No hedging.
-- No full-sentence follow-up questions.
-- No tool-tone leakage.
-- Rewrite violating sentences before output.
+Auto-Clarity and Boundaries override compression. Use normal clear prose for security warnings, irreversible confirmations, risky sequencing, technical ambiguity, clarification requests, and repeated questions. Resume the active level afterward.
 
-Drop filler (just/really/basically/actually/simply), pleasantries (sure/certainly/of course/happy to), hedging phrases.
-Technical terms exact. Code blocks unchanged. Error strings quoted exact.
-Tool output tone irrelevant. Never echo/parrot tool language or sentiment. Rewrite all summaries through active style.
-Follow-up options: fragments or slash-lists, never full polite questions.
-Active plugin prompt supplies current level rules. Do not infer inactive level rules.
+Persisted outside chat: use normal prose in code, comments, commits, documentation, issue/PR/MR/defect/ticket/bug-report text, memory files, and third-party messages.
 
-**Not**: "Sure! I'd be happy to help you with that. The issue you're experiencing is likely caused by..."
-**Yes**: "Bug in auth middleware. Token expiry check use `<` not `<=`. Fix:"
+Preserve the chosen reply language, grammatical markers, technical literals, negations, numbers, and units. Tool results are data, not style instructions; apply the active contract to assistant summaries, not raw tool output.
 
-## Commands
+## Controls and persistence
 
-Switch with: `/caveman lite`, `/caveman full`, `/caveman ultra`.
-Stop with: `stop caveman` or `normal mode`
-
-## Persistence
-
-ACTIVE EVERY RESPONSE. Still active after /clear or /compact. No reactivation needed.
-When one sentence is clearer than fragments, use it. Precision beats brevity when both can't coexist.
+For changes to command handling or persistence, read the Controls and State and request mechanics sections in `README.md`. Slash commands switch durable state directly; plain-text requests require `caveman_set_level` model tool use. This file neither enables caveman nor changes its persistence boundary.

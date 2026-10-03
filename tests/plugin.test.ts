@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import plugin from "../index.ts"
 import { harness, request } from "./harness.ts"
+import { systemRules, tailReminder } from "../tools/rules.ts"
 
 test("fresh install applies full rules without creating durable state or editing history", async () => {
   const host = harness()
@@ -134,6 +135,23 @@ test("active instructions protect code and follow live settings instead of plain
   expect(text).toContain("Error strings quoted exact")
   expect(text).toContain("Live plugin settings")
   expect(text).not.toContain('Only explicit user commands')
+})
+
+test("context and generate carry speech exceptions at every level without adding new controls", async () => {
+  const host = harness()
+  await plugin.setup(host.context)
+  for (const level of ["lite", "full", "ultra"] as const) {
+    await host.command(level)
+    for (const hook of ["context", "generate"] as const) {
+      const event = await host.request(hook)
+      expect(event.system[0]).toEqual({ type: "text", text: systemRules(level) })
+      expect(event.system.at(-1)).toEqual({ type: "text", text: tailReminder(level) })
+      expect(JSON.stringify(event.system)).toContain("Auto-Clarity and Boundaries override compression")
+    }
+  }
+  expect([...host.commands.keys()]).toEqual(["caveman"])
+  expect([...host.tools.keys()]).toEqual(["caveman_set_level"])
+  expect([...host.hooks.keys()]).toEqual(["context", "generate", "compaction"])
 })
 
 test("model tool changes shared mode through V2 structured result, including while off", async () => {

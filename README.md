@@ -26,14 +26,26 @@ Local development: `bun install --frozen-lockfile`, `bun run build`; configure `
 | `/caveman` | Report current mode; no state change |
 | `/caveman lite` | Tight full sentences; articles kept |
 | `/caveman full` | Drop articles/filler; fragments allowed; default |
-| `/caveman ultra` | Maximum prose compression; abbreviations/arrows |
+| `/caveman ultra` | Maximum clear compression; full prose words, no causal arrows |
 | `/caveman off` | Stop injecting reply-style rules |
 
 Arguments trimmed, case-insensitive; invalid arguments fail without changing state. `/caveman` prints `Caveman level: x`; switches persist first, then print `Caveman level set to x`. Commands admit synthetic chat messages with `resume: true`, waking model execution to deliver them without waiting for another user turn. Model may add reply; normal provider/token usage applies. Not client-side toast or model-free output.
 
 `caveman_set_level` remains model-callable, including while off. Plain-text requests such as `stop caveman` depend on model tool use; **no deterministic plain-text interception**. Guaranteed switching path: slash command. No aliases, skills, TUI picker, or plugin options.
 
-Code blocks, API names, technical terms, error strings preserved by prompt contract. Compression applies to assistant prose, not code rewriting.
+## Speech behavior
+
+The `lite`, `full`, and `ultra` speech rules follow the [upstream Claude speech contract](https://github.com/JuliusBrussee/caveman/blob/b39c90862855ad2f0813ce775b8bf07a9d6d2a50/skills/caveman/SKILL.md), pinned to commit `b39c908`. OpenCode controls and persistence remain intentionally different; this is not a full feature port. No skills, agents, or Wenyan modes are bundled.
+
+- Lite keeps articles and full sentences. Full permits fragments and drops articles. Ultra removes conjunctions only when meaning stays clear and states each fact once.
+- All levels remove filler, hedging, and pleasantries without adding words or fake broken grammar. Standard acronyms such as DB/API/HTTP are allowed; invented prose abbreviations and causal arrows are not.
+- Clarity follows Simplified Technical English principles: one idea per sentence, short active sentences, consistent terms, imperative instructions, and unambiguous references.
+- **Auto-Clarity overrides compression:** use normal clear prose for security warnings, irreversible-action confirmations, risky multi-step ordering, technical ambiguity, clarification requests, or repeated questions. Resume the active level afterward.
+- **Persisted artifacts use normal prose:** code, comments, commits, documentation, issue/PR/MR/defect/ticket/bug-report text, memory files, and third-party messages. Chat explanations remain compressed unless Auto-Clarity applies.
+- Preserve the user/project reply language, grammatical particles and postpositions, negations, qualifiers, numbers, and units. Code blocks, technical terms, API/CLI names, commit-type keywords, and error strings remain exact unless explicitly asked to translate them.
+- No routine tool-call narration, decorative tables/emoji, redundant recaps, unasked mode announcements, or long raw error-log dumps. Necessary clarification and safety warnings before tool calls remain allowed.
+
+`tools/rules.ts` contains the shared contract and level-specific rules. Tail reminders respect the same exceptions. These are model instructions, not output rewriting or guaranteed model obedience.
 
 ## State and request mechanics
 
